@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JEFFERSON RIVERA // APPLIED MATHEMATICS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #000000;
+    --white: #f0ece4;
+    --dim: #888880;
+    --faint: #2a2a2a;
+    --accent: #c8c4bc;
+    --glow: rgba(240,236,228,0.06);
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'VT323', monospace;
+    --body: 'Courier Prime', monospace;
+  }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+background: var(–black);
+color: var(–white);
+font-family: var(–mono);
+overflow-x: hidden;
+cursor: crosshair;
+}
+
+/* SCANLINE OVERLAY */
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background: repeating-linear-gradient(
+0deg,
+transparent,
+transparent 2px,
+rgba(0,0,0,0.18) 2px,
+rgba(0,0,0,0.18) 4px
+);
+pointer-events: none;
+z-index: 9999;
+}
+
+/* NOISE TEXTURE */
+body::after {
+content: ‘’;
+position: fixed;
+inset: 0;
+background-image: url(“data:image/svg+xml,%3Csvg viewBox=‘0 0 256 256’ xmlns=‘http://www.w3.org/2000/svg’%3E%3Cfilter id=‘noise’%3E%3CfeTurbulence type=‘fractalNoise’ baseFrequency=‘0.9’ numOctaves=‘4’ stitchTiles=‘stitch’/%3E%3C/filter%3E%3Crect width=‘100%25’ height=‘100%25’ filter=‘url(%23noise)’ opacity=‘0.06’/%3E%3C/svg%3E”);
+pointer-events: none;
+z-index: 9998;
+opacity: 0.6;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-track { background: var(–black); }
+::-webkit-scrollbar-thumb { background: var(–dim); }
+
+/* ─── ASCII RAIN CANVAS ─── */
+#ascii-rain {
+position: fixed;
+top: 0; left: 0;
+width: 100%; height: 100%;
+z-index: 0;
+opacity: 0.07;
+pointer-events: none;
+
+/* ─── HERO ─── */
+#hero {
+position: relative;
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+z-index: 10;
+padding: 4rem 2rem;
+border-bottom: 1px solid var(–faint);
+overflow: hidden;
+}
+
+.hero-grid-bg {
+position: absolute;
+inset: 0;
+background-image:
+linear-gradient(rgba(240,236,228,0.03) 1px, transparent 1px),
+linear-gradient(90deg, rgba(240,236,228,0.03) 1px, transparent 1px);
+background-size: 40px 40px;
+pointer-events: none;
+}
+
+.hero-corner {
+position: absolute;
+font-family: var(–mono);
+font-size: 0.55rem;
+color: var(–dim);
+letter-spacing: 0.08em;
+line-height: 1.8;
+white-space: pre;
+opacity: 0;
+animation: fadeIn 1.2s ease forwards;
+}
+.hero-corner.tl { top: 2rem; left: 2rem; animation-delay: 0.8s; }
+.hero-corner.tr { top: 2rem; right: 2rem; text-align: right; animation-delay: 1s; }
+.hero-corner.bl { bottom: 2rem; left: 2rem; animation-delay: 1.2s; }
+.hero-corner.br { bottom: 2rem; right: 2rem; text-align: right; animation-delay: 1.4s; }
+
+.hero-center {
+text-align: center;
+position: relative;
+z-index: 2;
+}
+
+.hero-emoticon {
+font-size: clamp(2rem, 6vw, 3.5rem);
+color: var(–dim);
+margin-bottom: 2rem;
+opacity: 0;
+animation: fadeIn 1s ease 0.2s forwards;
+letter-spacing: 0.05em;
+}
+
+.hero-name {
+font-family: var(–display);
+font-size: clamp(2.2rem, 7vw, 7rem);
+letter-spacing: 0.12em;
+line-height: 1;
+color: var(–white);
+position: relative;
+opacity: 0;
+animation: typeIn 1.4s steps(18) 0.5s forwards;
+overflow: hidden;
+white-space: nowrap;
+width: 0;
+}
+.hero-name.typed { width: auto; }
+
+.hero-sub {
+font-family: var(–mono);
+font-size: clamp(0.65rem, 1.5vw, 0.85rem);
+letter-spacing: 0.45em;
+color: var(–dim);
+text-transform: uppercase;
+margin-top: 1rem;
+opacity: 0;
+animation: fadeIn 1s ease 1.8s forwards;
+}
+
+.hero-equation {
+margin-top: 3rem;
+font-family: var(–body);
+font-style: italic;
+font-size: clamp(0.7rem, 1.8vw, 1rem);
+color: var(–dim);
+opacity: 0;
+animation: fadeIn 1s ease 2.2s forwards;
+}
+
+.hero-scroll-hint {
+position: absolute;
+bottom: 2.5rem;
+left: 50%;
+transform: translateX(-50%);
+font-family: var(–mono);
+font-size: 0.55rem;
+letter-spacing: 0.3em;
+color: var(–dim);
+text-transform: uppercase;
+opacity: 0;
+animation: fadeIn 1s ease 3s forwards;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 0.4rem;
+}
+
+.scroll-arrow {
+width: 1px;
+height: 40px;
+background: linear-gradient(to bottom, var(–dim), transparent);
+animation: pulse-line 2s ease infinite;
+}
+
+@keyframes pulse-line {
+0%, 100% { opacity: 0.3; }
+50% { opacity: 1; }
+}
+
+/* ─── SECTION COMMON ─── */
+section {
+position: relative;
+z-index: 10;
+padding: 6rem 2rem;
+max-width: 1100px;
+margin: 0 auto;
+}
+
+.section-header {
+display: flex;
+align-items: baseline;
+gap: 1.5rem;
+margin-bottom: 4rem;
+border-bottom: 1px solid var(–faint);
+padding-bottom: 1.5rem;
+}
+
+.section-num {
+font-family: var(–mono);
+font-size: 0.6rem;
+color: var(–dim);
+letter-spacing: 0.2em;
+}
+
+.section-title {
+font-family: var(–display);
+font-size: clamp(2rem, 5vw, 3.5rem);
+letter-spacing: 0.15em;
+color: var(–white);
+line-height: 1;
+}
+
+.section-tag {
+margin-left: auto;
+font-size: 0.55rem;
+color: var(–dim);
+letter-spacing: 0.15em;
+font-family: var(–mono);
+white-space: nowrap;
+}
+
+/* ─── ABOUT ─── */
+#about {
+border-bottom: 1px solid var(–faint);
+}
+
+.about-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 4rem;
+align-items: start;
+}
+
+@media (max-width: 700px) {
+.about-grid { grid-template-columns: 1fr; }
+}
+
+.about-text p {
+font-family: var(–body);
+font-size: 0.9rem;
+line-height: 2;
+color: var(–accent);
+margin-bottom: 1.5rem;
+opacity: 0;
+transform: translateY(20px);
+transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.about-text p.visible {
+opacity: 1;
+transform: none;
+}
+
+.about-matrix {
+font-family: var(–mono);
+font-size: 0.65rem;
+line-height: 1.8;
+color: var(–dim);
+white-space: pre;
+opacity: 0;
+transform: translateX(30px);
+transition: opacity 0.9s ease 0.3s, transform 0.9s ease 0.3s;
+}
+.about-matrix.visible {
+opacity: 1;
+transform: none;
+}
+
+.skills-list {
+margin-top: 2rem;
+display: flex;
+flex-direction: column;
+gap: 0.4rem;
+}
+
+.skill-row {
+display: flex;
+align-items: center;
+gap: 1rem;
+font-family: var(–mono);
+font-size: 0.65rem;
+letter-spacing: 0.1em;
+color: var(–dim);
+opacity: 0;
+transform: translateX(-15px);
+transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.skill-row.visible {
+opacity: 1;
+transform: none;
+}
+
+.skill-bar-track {
+flex: 1;
+height: 1px;
+background: var(–faint);
+position: relative;
+overflow: hidden;
+}
+
+.skill-bar-fill {
+position: absolute;
+top: 0; left: 0; bottom: 0;
+background: var(–white);
+width: 0%;
+transition: width 1.2s ease 0.5s;
+}
+.skill-row.visible .skill-bar-fill {
+width: var(–pct);
+}
+
+/* ─── PROJECTS ─── */
+#projects {
+border-bottom: 1px solid var(–faint);
+}
+
+.projects-grid {
+display: grid;
+gap: 1px;
+grid-template-columns: 1fr;
+}
+
+.project-card {
+background: var(–black);
+border: 1px solid var(–faint);
+position: relative;
+overflow: hidden;
+cursor: pointer;
+opacity: 0;
+transform: translateY(30px);
+transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s ease;
+}
+.project-card.visible {
+opacity: 1;
+transform: none;
+}
+.project-card:hover {
+border-color: var(–dim);
+}
+.project-card:hover .project-glitch::after {
+opacity: 1;
+}
+
+.project-header {
+padding: 2rem 2.5rem;
+display: flex;
+align-items: baseline;
+gap: 2rem;
+position: relative;
+}
+
+.project-index {
+font-family: var(–mono);
+font-size: 0.55rem;
+color: var(–dim);
+letter-spacing: 0.2em;
+flex-shrink: 0;
+}
+
+.project-name {
+font-family: var(–display);
+font-size: clamp(1.5rem, 3vw, 2.2rem);
+letter-spacing: 0.1em;
+color: var(–white);
+flex: 1;
+}
+
+.project-glitch {
+position: relative;
+}
+.project-glitch::after {
+content: attr(data-text);
+position: absolute;
+top: 2px; left: 3px;
+color: var(–dim);
+opacity: 0;
+clip-path: inset(0 0 60% 0);
+transition: opacity 0.2s;
+pointer-events: none;
+}
+
+.project-tags {
+display: flex;
+gap: 0.5rem;
+flex-wrap: wrap;
+}
+
+.project-tag {
+font-family: var(–mono);
+font-size: 0.5rem;
+letter-spacing: 0.15em;
+color: var(–dim);
+border: 1px solid var(–faint);
+padding: 0.2rem 0.5rem;
+text-transform: uppercase;
+}
+
+.project-expand-btn {
+margin-left: auto;
+font-family: var(–mono);
+font-size: 0.55rem;
+letter-spacing: 0.2em;
+color: var(–dim);
+background: none;
+border: none;
+cursor: pointer;
+padding: 0.5rem;
+flex-shrink: 0;
+transition: color 0.2s;
+}
+.project-expand-btn:hover { color: var(–white); }
+
+.project-body {
+max-height: 0;
+overflow: hidden;
+transition: max-height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.project-body.open {
+max-height: 800px;
+}
+
+.project-content {
+padding: 0 2.5rem 2.5rem;
+display: grid;
+grid-template-columns: 2fr 1fr;
+gap: 3rem;
+border-top: 1px solid var(–faint);
+padding-top: 2rem;
+}
+
+@media (max-width: 700px) {
+.project-content { grid-template-columns: 1fr; }
+}
+
+.project-desc {
+font-family: var(–body);
+font-size: 0.85rem;
+line-height: 1.9;
+color: var(–accent);
+}
+
+.project-meta {
+font-family: var(–mono);
+font-size: 0.6rem;
+line-height: 2.2;
+color: var(–dim);
+border-left: 1px solid var(–faint);
+padding-left: 2rem;
+}
+
+.project-meta strong {
+color: var(–white);
+display: block;
+letter-spacing: 0.15em;
+font-family: var(–mono);
+font-weight: normal;
+margin-top: 0.8rem;
+}
+.project-meta strong:first-child { margin-top: 0; }
+
+.project-formula {
+margin-top: 1.5rem;
+font-family: var(–body);
+font-style: italic;
+font-size: 0.8rem;
+color: var(–dim);
+border: 1px solid var(–faint);
+padding: 1rem 1.5rem;
+background: rgba(255,255,255,0.02);
+}
+
+/* ─── CONTACT ─── */
+#contact {
+text-align: center;
+padding-bottom: 8rem;
+}
+
+.contact-ascii {
+font-family: var(–mono);
+font-size: 0.6rem;
+line-height: 1.6;
+color: var(–faint);
+white-space: pre;
+margin-bottom: 3rem;
+display: inline-block;
+}
+
+.contact-links {
+display: flex;
+justify-content: center;
+gap: 3rem;
+flex-wrap: wrap;
+}
+
+.contact-link {
+font-family: var(–mono);
+font-size: 0.7rem;
+letter-spacing: 0.3em;
+color: var(–dim);
+text-decoration: none;
+text-transform: uppercase;
+position: relative;
+transition: color 0.3s;
+}
+.contact-link::after {
+content: ‘’;
+position: absolute;
+bottom: -3px; left: 0; right: 0;
+height: 1px;
+background: var(–white);
+transform: scaleX(0);
+transform-origin: left;
+transition: transform 0.3s ease;
+}
+.contact-link:hover { color: var(–white); }
+.contact-link:hover::after { transform: scaleX(1); }
+
+/* ─── FOOTER ─── */
+footer {
+position: relative;
+z-index: 10;
+border-top: 1px solid var(–faint);
+padding: 2rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+flex-wrap: wrap;
+gap: 1rem;
+font-family: var(–mono);
+font-size: 0.55rem;
+letter-spacing: 0.15em;
+color: var(–faint);
+}
+
+/* ─── NAV ─── */
+nav {
+position: fixed;
+top: 0; left: 0; right: 0;
+z-index: 1000;
+padding: 1.2rem 2rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+pointer-events: none;
+}
+
+.nav-logo {
+font-family: var(–mono);
+font-size: 0.55rem;
+letter-spacing: 0.25em;
+color: var(–dim);
+pointer-events: all;
+}
+
+.nav-links {
+display: flex;
+gap: 2rem;
+list-style: none;
+pointer-events: all;
+}
+
+.nav-links a {
+font-family: var(–mono);
+font-size: 0.55rem;
+letter-spacing: 0.2em;
+color: var(–dim);
+text-decoration: none;
+text-transform: uppercase;
+transition: color 0.2s;
+}
+.nav-links a:hover { color: var(–white); }
+
+/* ─── DIVIDER ASCII ─── */
+.ascii-divider {
+font-family: var(–mono);
+font-size: 0.55rem;
+color: var(–faint);
+letter-spacing: 0.05em;
+text-align: center;
+padding: 1rem 0;
+overflow: hidden;
+white-space: nowrap;
+position: relative;
+z-index: 10;
+}
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeIn {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+
+@keyframes typeIn {
+from { width: 0; opacity: 1; }
+to { width: 100%; opacity: 1; }
+}
+
+@keyframes flicker {
+0%, 95%, 100% { opacity: 1; }
+96% { opacity: 0.4; }
+97% { opacity: 1; }
+98% { opacity: 0.2; }
+99% { opacity: 1; }
+}
+
+.flicker {
+animation: flicker 8s infinite;
+}
+
+/* CURSOR BLINK */
+.blink::after {
+content: ‘█’;
+animation: flicker 1s step-end infinite;
+font-size: 0.8em;
+color: var(–white);
+}
+
+/* ─── GLITCH HOVER ON PROJECT ─── */
+@keyframes glitch {
+0% { clip-path: inset(80% 0 0 0); transform: translate(-2px); }
+20% { clip-path: inset(10% 0 85% 0); transform: translate(2px); }
+40% { clip-path: inset(50% 0 30% 0); transform: translate(-1px); }
+60% { clip-path: inset(5% 0 70% 0); transform: translate(3px); }
+80% { clip-path: inset(30% 0 50% 0); transform: translate(-2px); }
+100% { clip-path: inset(80% 0 0 0); transform: translate(0); }
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 500px) {
+.project-header { flex-wrap: wrap; }
+.hero-corner.tr, .hero-corner.br { display: none; }
+footer { flex-direction: column; text-align: center; }
+.contact-links { gap: 1.5rem; }
+}
+</style>
+
+</head>
+<body>
+
+<canvas id="ascii-rain"></canvas>
+
+<nav>
+  <span class="nav-logo">JR // APPLIED MATH</span>
+  <ul class="nav-links">
+    <li><a href="#about">ABOUT</a></li>
+    <li><a href="#projects">PROJECTS</a></li>
+    <li><a href="#contact">CONTACT</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+
+<section id="hero">
+  <div class="hero-grid-bg"></div>
+
+  <div class="hero-corner tl">SYSTEM_INIT........OK
+KERNEL_LOAD........OK
+RENDER_ENV.........OK
+USER............JR_01</div>
+
+  <div class="hero-corner tr">LAT: 25.7617° N
+LON: 80.1918° W
+ALT: 2.1m
+UTC-05:00</div>
+
+  <div class="hero-corner bl">∂²u/∂t² = c²∇²u
+∇ · E = ρ/ε₀
+∇ × B = μ₀J
+λ: 0.000000001</div>
+
+  <div class="hero-corner br">VERSION: 4.2.1
+BUILD: 2024.09.17
+STATUS: ACTIVE
+PROCESS: 01</div>
+
+  <div class="hero-center">
+    <div class="hero-emoticon">(ദ്ദി˙ᗜ˙)</div>
+
+```
+<h1 class="hero-name flicker">JEFFERSON RIVERA</h1>
+<p class="hero-sub blink">Applied Mathematics</p>
+<p class="hero-equation">∫∫∫<sub>V</sub> (∇ · F) dV = ∮∮<sub>S</sub> F · dS</p>
+```
+
+  </div>
+
+  <div class="hero-scroll-hint">
+    <span>SCROLL</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<div class="ascii-divider">
+  ─────────────────────────────────── [ NODE_002 ] ───────────────────────────────────
+</div>
+
+<!-- ABOUT -->
+
+<section id="about">
+  <div class="section-header">
+    <span class="section-num">[ 001 ]</span>
+    <h2 class="section-title">SYSTEM.PROFILE</h2>
+    <span class="section-tag">ENTITY_DATA // ACTIVE</span>
+  </div>
+  <div class="about-grid">
+    <div class="about-text">
+      <p>Applied mathematics student operating at the intersection of computation, physics, and pure theory. Current research vector: differential equations as models for physical reality, electromagnetic field behavior, and stochastic systems.</p>
+      <p>Fluent in the language of boundary conditions, eigenvalue problems, and the quiet precision of a well-formed proof. Electronics as a secondary protocol — hardware as a translation layer between abstraction and the physical world.</p>
+      <p>This is not a resume. This is a signal log.</p>
+      <div class="skills-list">
+        <div class="skill-row" style="--pct: 92%"><span>MULTIVARIABLE CALC</span><div class="skill-bar-track"><div class="skill-bar-fill"></div></div><span>92</span></div>
+        <div class="skill-row" style="--pct: 88%; transition-delay:0.1s"><span>DIFF. EQUATIONS</span><div class="skill-bar-track"><div class="skill-bar-fill"></div></div><span>88</span></div>
+        <div class="skill-row" style="--pct: 85%; transition-delay:0.2s"><span>ELECTROMAGNETISM</span><div class="skill-bar-track"><div class="skill-bar-fill"></div></div><span>85</span></div>
+        <div class="skill-row" style="--pct: 78%; transition-delay:0.3s"><span>ELECTRONICS / HW</span><div class="skill-bar-track"><div class="skill-bar-fill"></div></div><span>78</span></div>
+        <div class="skill-row" style="--pct: 82%; transition-delay:0.4s"><span>LaTeX / TYPESETTING</span><div class="skill-bar-track"><div class="skill-bar-fill"></div></div><span>82</span></div>
+      </div>
+    </div>
+    <div class="about-matrix">
+A = | a₁₁  a₁₂  a₁₃ |
+    | a₂₁  a₂₂  a₂₃ |
+    | a₃₁  a₃₂  a₃₃ |
+
+det(A) ≠ 0  →  ∃ A⁻¹
+
+∇²φ = 0         [Laplace]
+∇²φ = ρ/ε₀     [Poisson]
+
+d/dt[Lq̇ - L] = 0
+[Euler-Lagrange]
+
+∮ E · dl = -dΦB/dt
+∮ B · dl = μ₀I + μ₀ε₀(dΦE/dt)
+
+PROCESS: ONGOING…
+STATUS: [■■■■■■■■░░] 80%
+</div>
+
+  </div>
+</section>
+
+<div class="ascii-divider">
+  ─────────────────────────────────── [ NODE_003 ] ───────────────────────────────────
+</div>
+
+<!-- PROJECTS -->
+
+<section id="projects">
+  <div class="section-header">
+    <span class="section-num">[ 002 ]</span>
+    <h2 class="section-title">PROJECT.LOG</h2>
+    <span class="section-tag">RECORDS // INDEXED</span>
+  </div>
+  <div class="projects-grid" id="projects-grid">
+    <!-- Cards injected by JS -->
+  </div>
+</section>
+
+<div class="ascii-divider">
+  ─────────────────────────────────── [ NODE_004 ] ───────────────────────────────────
+</div>
+
+<!-- CONTACT -->
+
+<section id="contact">
+  <div class="section-header" style="justify-content:center; border:none; margin-bottom:2rem;">
+    <span class="section-num">[ 003 ]</span>
+    <h2 class="section-title">TRANSMIT</h2>
+  </div>
+  <div class="contact-ascii">
+┌──────────────────────────────────────────┐
+│  SIGNAL OPEN // AWAITING HANDSHAKE...    │
+│  > ping jefferson.rivera@university.edu  │
+│  > [████████████████░░░░] CONNECTING...  │
+└──────────────────────────────────────────┘
+  </div>
+  <div class="contact-links">
+    <a href="mailto:jefferson.rivera@email.com" class="contact-link">EMAIL</a>
+    <a href="#" class="contact-link">GITHUB</a>
+    <a href="#" class="contact-link">LINKEDIN</a>
+    <a href="#" class="contact-link">RESUME.PDF</a>
+  </div>
+</section>
+
+<footer>
+  <span>JR // APPLIED MATHEMATICS // SYSTEM v4.2.1</span>
+  <span>∂/∂t(ρv) = -∇p + μ∇²v + ρg</span>
+  <span>© 2024 // ALL RIGHTS ENCRYPTED</span>
+</footer>
+
+<script>
+/* ─── ASCII RAIN ─── */
+(function() {
+  const canvas = document.getElementById('ascii-rain');
+  const ctx = canvas.getContext('2d');
+  const chars = '01∂∇∮∫∑∏αβγδεζηθλμπρστφψω∞≠≡≤≥∝∈∉⊂⊃∪∩|─┼╔╗╚╝║═▓▒░'.split('');
+  let drops = [];
+  let cols;
+  const fontSize = 12;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / fontSize);
+    drops = Array(cols).fill(1);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(200,196,188,0.9)';
+    ctx.font = `${fontSize}px 'Share Tech Mono', monospace`;
+    drops.forEach((y, i) => {
+      const ch = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(ch, i * fontSize, y * fontSize);
+      if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  }
+  setInterval(draw, 80);
+})();
+
+/* ─── PROJECTS DATA ─── */
+const projects = [
+  {
+    id: '001',
+    name: 'DRIFT VELOCITY DERIVATION',
+    tags: ['ELECTROMAGNETISM', 'LaTeX', 'PHYSICS'],
+    desc: 'A full formal derivation of the drift velocity relation I = nqAv_d from first principles, tracing the microscopic origin of macroscopic current. Produced as a typeset LaTeX document with annotated proofs and dimensional analysis at each step. The document bridges classical mechanics and circuit theory through kinetic arguments.',
+    formula: 'I = nqAv_d  →  J = nqv_d  →  σ = nq²τ/m',
+    year: '2024',
+    type: 'RESEARCH / DOCUMENTATION',
+    tools: 'LaTeX / PGFPlots / Physics',
+    status: 'ARCHIVED'
+  },
+  {
+    id: '002',
+    name: 'SiPM BIAS VOLTAGE CIRCUIT',
+    tags: ['ELECTRONICS', 'HARDWARE', 'SENSOR'],
+    desc: 'Design and assembly of a protoboard bias voltage circuit for the ONSEMI MICROFJ-60035-TSV-TR silicon photomultiplier sensor. Involved decoding the 6×6 TSV array pinout, identifying cathode terminals (A1, F6), and correctly routing high-voltage supply rails for single-photon detection operation. Junction capacitance and quench resistor values analyzed.',
+    formula: 'V_bias > V_breakdown ≈ 24.5V  →  ΔV = V_bias - V_bd',
+    year: '2024',
+    type: 'HARDWARE / CIRCUIT DESIGN',
+    tools: 'Protoboard / Datasheet Analysis / Multimeter',
+    status: 'IN PROGRESS'
+  },
+  {
+    id: '003',
+    name: 'LAPLACE TRANSFORM ODE SOLVER',
+    tags: ['DIFFERENTIAL EQUATIONS', 'LaTeX', 'CALCULUS'],
+    desc: 'Comprehensive solutions to spring-mass systems with discontinuous forcing functions, leveraging Heaviside step functions and piecewise Laplace transforms. Includes Newton\'s law of cooling problems with switching ambient temperatures. All solutions typeset as compilable LaTeX with PGFPlots visualizations of solution curves.',
+    formula: 'L{f(t)} = F(s) = ∫₀^∞ e^{-st} f(t) dt',
+    year: '2024',
+    type: 'MATHEMATICAL ANALYSIS',
+    tools: 'LaTeX / PGFPlots / Symbolic Math',
+    status: 'COMPLETE'
+  },
+  {
+    id: '004',
+    name: 'GREEN\'S THEOREM / VECTOR CALCULUS',
+    tags: ['MULTIVARIABLE CALC', 'VECTOR FIELDS', 'TOPOLOGY'],
+    desc: 'Deep study of Green\'s Theorem, the Fundamental Theorem for Line Integrals, conservative vector fields, divergence and curl operators. Produced worked solutions distinguishing path-dependent from path-independent integrals, with geometric interpretation of circulation and flux. Includes identification of P and Q components from vector form F·dr.',
+    formula: '∮_C P dx + Q dy = ∬_D (∂Q/∂x − ∂P/∂y) dA',
+    year: '2024',
+    type: 'THEORETICAL MATHEMATICS',
+    tools: 'LaTeX / Vector Analysis',
+    status: 'ARCHIVED'
+  },
+  {
+    id: '005',
+    name: 'INDUCTOR PARALLEL APPROXIMATION',
+    tags: ['ELECTRONICS', 'CIRCUIT THEORY', 'HARDWARE'],
+    desc: 'Color-code decoding and parallel combination analysis for inductors targeting 100 µH. Five 470 µH inductors in parallel yield an equivalent inductance of ≈ 94 µH — within engineering tolerance for the target application. Includes 5-band resistor/inductor color code reference and verification via reciprocal sum formula.',
+    formula: '1/L_eq = Σ 1/Lᵢ  →  5×(1/470) → L_eq ≈ 94 µH',
+    year: '2024',
+    type: 'ELECTRONICS / ANALYSIS',
+    tools: 'Bench Components / Color Code Charts',
+    status: 'COMPLETE'
+  }
+];
+
+/* ─── RENDER PROJECTS ─── */
+const grid = document.getElementById('projects-grid');
+projects.forEach((p, i) => {
+  const card = document.createElement('div');
+  card.className = 'project-card';
+  card.style.transitionDelay = `${i * 0.1}s`;
+  card.innerHTML = `
+    <div class="project-header">
+      <span class="project-index">[ ${p.id} ]</span>
+      <h3 class="project-name project-glitch" data-text="${p.name}">${p.name}</h3>
+      <div class="project-tags">
+        ${p.tags.map(t => `<span class="project-tag">${t}</span>`).join('')}
+      </div>
+      <button class="project-expand-btn" aria-label="Expand">[ + VIEW ]</button>
+    </div>
+    <div class="project-body">
+      <div class="project-content">
+        <div>
+          <p class="project-desc">${p.desc}</p>
+          <div class="project-formula">${p.formula}</div>
+        </div>
+        <div class="project-meta">
+          <strong>YEAR</strong>${p.year}
+          <strong>TYPE</strong>${p.type}
+          <strong>TOOLS</strong>${p.tools}
+          <strong>STATUS</strong>${p.status}
+        </div>
+      </div>
+    </div>
+  `;
+  // Toggle expand
+  const btn = card.querySelector('.project-expand-btn');
+  const body = card.querySelector('.project-body');
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = body.classList.toggle('open');
+    btn.textContent = open ? '[ − CLOSE ]' : '[ + VIEW ]';
+  });
+  card.addEventListener('click', () => {
+    const open = body.classList.toggle('open');
+    btn.textContent = open ? '[ − CLOSE ]' : '[ + VIEW ]';
+  });
+  grid.appendChild(card);
+});
+
+/* ─── INTERSECTION OBSERVER ─── */
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll(
+  '.project-card, .about-text p, .about-matrix, .skill-row'
+).forEach(el => obs.observe(el));
+
+/* ─── HERO NAME TYPEWRITER ─── */
+const name = document.querySelector('.hero-name');
+setTimeout(() => {
+  name.style.opacity = '1';
+  name.style.animation = 'typeIn 1.4s steps(18) forwards';
+}, 500);
+
+/* ─── RANDOM FLICKER ON SECTION TITLES ─── */
+document.querySelectorAll('.section-title').forEach(el => {
+  setInterval(() => {
+    if (Math.random() < 0.015) {
+      el.style.opacity = '0.4';
+      setTimeout(() => el.style.opacity = '', 80);
+    }
+  }, 500);
+});
+</script>
+
+</body>
+</html>
