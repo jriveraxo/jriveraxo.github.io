@@ -7,10 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="robots" content="noodp">
 <title>JEFFERSON RIVERA // APPLIED MATHEMATICS</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" crossorigin="anonymous">
 <style>
   :root {
     --black: #000000;
@@ -19,7 +20,7 @@
     --faint: #2a2a2a;
     --accent: #c8c4bc;
     --mono: 'Share Tech Mono', monospace;
-    --display: 'VT323', 'Share Tech Mono', monospace;
+    --display: 'VT323', 'Share Tech Mono', 'Courier New', monospace;
     --body: 'Courier Prime', monospace;
   }
 
@@ -118,7 +119,7 @@ animation: fadeIn 1s ease 0.2s forwards;
 }
 
 .hero-name {
-font-family: ‘VT323’, ‘Share Tech Mono’, monospace;
+font-family: ‘VT323’, ‘Share Tech Mono’, ‘Courier New’, monospace !important;
 font-size: clamp(2.8rem, 9vw, 7rem);
 letter-spacing: 0.08em;
 line-height: 1.05;
@@ -232,7 +233,7 @@ gap: 4rem;
 align-items: start;
 }
 
-.about-text p {
+.about-text .about-p {
 font-family: var(–body);
 font-size: 0.9rem;
 line-height: 2;
@@ -242,7 +243,7 @@ opacity: 0;
 transform: translateY(20px);
 transition: opacity 0.7s ease, transform 0.7s ease;
 }
-.about-text p.visible { opacity: 1; transform: none; }
+.about-text .about-p.visible { opacity: 1; transform: none; }
 
 .about-matrix {
 font-family: var(–mono);
@@ -580,7 +581,7 @@ footer { flex-direction: column; text-align: center; }
 </head>
 <body style="background:#000000;color:#f0ece4;">
 
-<canvas id="ascii-rain"></canvas>
+<canvas id="ascii-rain" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.07;pointer-events:none;"></canvas>
 
 <nav>
   <span class="nav-logo">JR // APPLIED MATH</span>
@@ -637,9 +638,9 @@ PROCESS: 01</div>
   </div>
   <div class="about-grid">
     <div class="about-text">
-      <p>Applied mathematics student operating at the intersection of computation, physics, and pure theory. Current research vector: differential equations as models for physical reality, electromagnetic field behavior, and stochastic systems.</p>
-      <p>Fluent in the language of boundary conditions, eigenvalue problems, and the quiet precision of a well-formed proof. Electronics as a secondary protocol -- hardware as a translation layer between abstraction and the physical world.</p>
-      <p>This is not a resume. This is a signal log.</p>
+      <div class="about-p">Applied mathematics student operating at the intersection of computation, physics, and pure theory. Current research vector: differential equations as models for physical reality, electromagnetic field behavior, and stochastic systems.</div>
+      <div class="about-p">Fluent in the language of boundary conditions, eigenvalue problems, and the quiet precision of a well-formed proof. Electronics as a secondary protocol -- hardware as a translation layer between abstraction and the physical world.</div>
+      <div class="about-p">This is not a resume. This is a signal log.</div>
       <div class="skills-list">
         <div class="skill-row" style="--pct:92%"><span>MULTIVARIABLE CALC</span><div class="skill-bar-track"><div class="skill-bar-fill"></div></div><span>92</span></div>
         <div class="skill-row" style="--pct:88%"><span>DIFF. EQUATIONS</span><div class="skill-bar-track"><div class="skill-bar-fill"></div></div><span>88</span></div>
@@ -802,7 +803,7 @@ projects.forEach(function(p, i) {
     '<div class="project-body">' +
       '<div class="project-content">' +
         '<div>' +
-          '<p class="project-desc">' + p.desc + '</p>' +
+          '<div class="project-desc">' + p.desc + '</div>' +
           '<div class="project-formula">' + p.formula + '</div>' +
         '</div>' +
         '<div class="project-meta">' +
