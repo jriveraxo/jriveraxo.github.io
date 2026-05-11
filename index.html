@@ -836,7 +836,7 @@ var obs = new IntersectionObserver(function(entries) {
   });
 }, { threshold: 0.12 });
 
-document.querySelectorAll('.project-card, .about-text p, .about-matrix, .skill-row').forEach(function(el) {
+document.querySelectorAll('.project-card, .about-p, .about-matrix, .skill-row').forEach(function(el) {
   obs.observe(el);
 });
 
